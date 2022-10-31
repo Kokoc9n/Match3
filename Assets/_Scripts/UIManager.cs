@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -16,30 +15,28 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         gridManager = FindObjectOfType<GridManager>();
-        foreach(GridManager.ObjectiveGem gem in gridManager.objectives)
+        foreach(GridManager.ObjectiveGem gem in gridManager.Objectives)
         {
             GameObject g = Instantiate(objectivePrefab, objectiveList.transform);
             list.Add(g.GetComponent<TMP_Text>());   
         }
-        for(int i = 0; i < gridManager.objectives.Length; i++)
+        for(int i = 0; i < gridManager.Objectives.Length; i++)
         {
-            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.objectives[i].gem.sprite;
+            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].g.s;
         }
     }
-
-    // Update is called once per frame
     void Update()
     {
         for(int i = 0; i < list.Count; i++)
         {
-            if (gridManager.objectives[i].objectiveCount > 0) list[i].text = gridManager.objectives[i].objectiveCount.ToString();
+            if (gridManager.Objectives[i].ObjectiveCount > 0) list[i].text = gridManager.Objectives[i].ObjectiveCount.ToString();
             else list[i].text = "Done!";
         }
-        turns.text = gridManager.turns.ToString() + "Turns left";
+        turns.text = gridManager.Turns.ToString() + "Turns left";
         if(gridManager.gameState == GridManager.GameState.End)
         {
             endScreen.SetActive(true);
-            if(gridManager.win)
+            if(gridManager.Win)
             {
                 endScreen.transform.GetChild(0).GetComponent<TMP_Text>().text = "Win";
                 endScreen.transform.GetChild(1).gameObject.SetActive(false);

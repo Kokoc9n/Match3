@@ -4,10 +4,10 @@ using UnityEngine;
 public class Gem : ScriptableObject
 {
     public enum Color { Beige, Blue, Green, Pink, Yellow }
-    public Color color;
-    public Sprite sprite;
+    public Color c;
+    public Sprite s;
     public Gem(Color color)
     {
-        this.color = color;
+        this.c = color;
     }
 }

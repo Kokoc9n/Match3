@@ -1,78 +1,74 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using DG.Tweening;
-using System.Threading;
 
 [System.Serializable]
 public class Cell
 {
-    public Gem gem;
-    public Vector2Int coord;
-    public GameObject cellGameObject; //change to private
+    public Gem g;
+    public Vector2Int Coord;
+    public GameObject CellGameObject;
     public enum Type { Base, Void, Spawner };
-    public Type type;
+    public Type t;
     public Cell(Type type, Vector2Int coord)
     {
-        this.coord = coord;
-        this.type = type;
-        cellGameObject = new GameObject();
-        cellGameObject.AddComponent<SpriteRenderer>();
-        cellGameObject.transform.position = new Vector2(coord.x, coord.y);
+        this.Coord = coord;
+        this.t = type;
+        CellGameObject = new GameObject();
+        CellGameObject.AddComponent<SpriteRenderer>();
+        CellGameObject.transform.position = new Vector2(coord.x, coord.y);
     }
     public void UpdateGemSprite()
     {
-        if(gem != null) cellGameObject.GetComponent<SpriteRenderer>().sprite = gem.sprite;
-        else cellGameObject.GetComponent<SpriteRenderer>().sprite = null;
+        if(g != null) CellGameObject.GetComponent<SpriteRenderer>().sprite = g.s;
+        else CellGameObject.GetComponent<SpriteRenderer>().sprite = null;
     }
     public void DropGem(List<Cell> list, int index, int width)
     {
-        list[index + width].gem = gem;
-        gem = null;
-        //Debug.Log(index + " dropped to: " + (index + width));
+        list[index + width].g = g;
+        g = null;
 
         UpdateGemSprite();
         list[index + width].UpdateGemSprite();
 
-        GemMoveAnimation(list[index + width].cellGameObject, this.cellGameObject.transform.position);
+        GemMoveAnimation(list[index + width].CellGameObject, this.CellGameObject.transform.position);
 
     }
     private void GemMoveAnimation(GameObject cell, Vector3 target)
     {
-        cell.transform.DOMove(target, (float)GridManager.delay / ((float)GridManager.dropSpeed * (float)GridManager.delay)).From();
+        cell.transform.DOMove(target, (float)GridManager._Delay / ((float)GridManager._DropSpeed * (float)GridManager._Delay)).From();
     }
     public void GemSelectedAnimation()
     {
-        cellGameObject.transform.DOScale(new Vector3(1.2f, 1.2f), 0.5f).SetLoops(-1, LoopType.Yoyo);
+        CellGameObject.transform.DOScale(new Vector3(1.2f, 1.2f), 0.5f).SetLoops(-1, LoopType.Yoyo);
     }
     public void GemDeselectedAnimation()
     {
-        cellGameObject.transform.DOKill();
-        cellGameObject.transform.localScale = Vector3.one;
+        CellGameObject.transform.DOKill();
+        CellGameObject.transform.localScale = Vector3.one;
     }
     public void SwapGems(Cell target)
     {
-        Gem gem = this.gem;
-        this.gem = target.gem;
-        target.gem = gem;
+        Gem gem = this.g;
+        this.g = target.g;
+        target.g = gem;
 
-        Vector3 targetPos = target.cellGameObject.transform.position;
-        Vector3 cellPos = this.cellGameObject.transform.position;
+        Vector3 targetPos = target.CellGameObject.transform.position;
+        Vector3 cellPos = this.CellGameObject.transform.position;
 
-        target.cellGameObject.transform.DOMove(this.cellGameObject.transform.position, 1).From();
-        this.cellGameObject.transform.DOMove(targetPos, 1).From();
+        target.CellGameObject.transform.DOMove(this.CellGameObject.transform.position, 0.5f).From();
+        this.CellGameObject.transform.DOMove(targetPos, 0.5f).From();
         
 
-        target.cellGameObject.transform.position = targetPos;
-        this.cellGameObject.transform.position = cellPos;
+        target.CellGameObject.transform.position = targetPos;
+        this.CellGameObject.transform.position = cellPos;
         UpdateGemSprite();
         target.UpdateGemSprite();
     }
     public bool CheckBelow(List<Cell> list, int index, int width)
     {
-        if (list[index + width].gem == null 
-            && list[index + width].type != Type.Void 
+        if (list[index + width].g == null 
+            && list[index + width].t != Type.Void 
             && list[index + width] != null)
         {
             return true;
@@ -81,35 +77,35 @@ public class Cell
     }
     public bool CheckDiagonal(List<Cell> list, int index, int width)
     {
-        // Check both diagonals
-        if (list[index + width + 1].gem == null 
-            && list[index + width - 1].gem == null
-            && list[index + width + 1].type != Type.Void 
-            && list[index + width - 1].type != Type.Void)
+        // Check both diagonals.
+        if (list[index + width + 1].g == null 
+            && list[index + width - 1].g == null
+            && list[index + width + 1].t != Type.Void 
+            && list[index + width - 1].t != Type.Void)
         {
-            // Gem not at the edge
-            if (list[index].coord.x != list[0].coord.x 
-                && list[index].coord.x != list[list.Count - 1].coord.x) 
+            // Gem not at the edge.
+            if (list[index].Coord.x != list[0].Coord.x 
+                && list[index].Coord.x != list[list.Count - 1].Coord.x) 
             {
                 DropGem(list, index, width + Random.Range(0, 2) * 2 - 1);
                 return true;
             }
         }
-        // Right diagonal
-        else if (list[index + width + 1].gem == null && list[index + width + 1].type != Type.Void) 
+        // Right diagonal.
+        else if (list[index + width + 1].g == null && list[index + width + 1].t != Type.Void) 
         {
-            // Gem not at the edge
-            if (list[index].coord.x != list[0].coord.x && list[index].coord.x != list[list.Count - 1].coord.x) 
+            // Gem not at the edge.
+            if (list[index].Coord.x != list[0].Coord.x && list[index].Coord.x != list[list.Count - 1].Coord.x) 
             {
                 DropGem(list, index, width + 1);
                 return true;
             }
         }
-        // Left diagonal
-        else if (list[index + width - 1].gem == null && list[index + width - 1].type != Type.Void) 
+        // Left diagonal.
+        else if (list[index + width - 1].g == null && list[index + width - 1].t != Type.Void) 
         {
-            // Gem not at the edge
-            if (list[index].coord.x != list[0].coord.x && list[index].coord.x != list[list.Count - 1].coord.x) 
+            // Gem not at the edge.
+            if (list[index].Coord.x != list[0].Coord.x && list[index].Coord.x != list[list.Count - 1].Coord.x) 
             {
                 DropGem(list, index, width - 1);
                 return true;
