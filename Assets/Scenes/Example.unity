@@ -163,7 +163,7 @@ MonoBehaviour:
   supertileSize: 5
   gameState: 0
   Win: 0
-  Turns: 2
+  Turns: 10
   radius: 3
   Objectives:
   - ObjectiveCount: 30
@@ -172,6 +172,7 @@ MonoBehaviour:
     g: {fileID: 11400000, guid: 01e415b9690c847409770b951eda1e40, type: 2}
   - ObjectiveCount: 15
     g: {fileID: 11400000, guid: b5b05eeb67f39164a963fa8f6e0d553f, type: 2}
+  startingValues: []
   swipeRange: 0.2
 --- !u!156049354 &222658079
 Grid:
