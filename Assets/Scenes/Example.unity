@@ -162,16 +162,16 @@ MonoBehaviour:
   cells: []
   supertileSize: 5
   gameState: 0
-  win: 0
-  turns: 10
+  Win: 0
+  Turns: 2
   radius: 3
-  objectives:
-  - objectiveCount: 50
-    gem: {fileID: 11400000, guid: 01e415b9690c847409770b951eda1e40, type: 2}
-  - objectiveCount: 60
-    gem: {fileID: 11400000, guid: f97519b37f8e8e64c931f458f4e78dd4, type: 2}
-  - objectiveCount: 30
-    gem: {fileID: 11400000, guid: b5b05eeb67f39164a963fa8f6e0d553f, type: 2}
+  Objectives:
+  - ObjectiveCount: 30
+    g: {fileID: 11400000, guid: 711b6155207a85d4cacf5c126cfa6953, type: 2}
+  - ObjectiveCount: 20
+    g: {fileID: 11400000, guid: 01e415b9690c847409770b951eda1e40, type: 2}
+  - ObjectiveCount: 15
+    g: {fileID: 11400000, guid: b5b05eeb67f39164a963fa8f6e0d553f, type: 2}
   swipeRange: 0.2
 --- !u!156049354 &222658079
 Grid:
@@ -2320,7 +2320,7 @@ GameObject:
   - component: {fileID: 1718801182}
   - component: {fileID: 1718801181}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: Turn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

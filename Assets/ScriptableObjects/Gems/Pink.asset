@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e8f9a4bfc755d843af8a92e277e2894, type: 3}
   m_Name: Pink
   m_EditorClassIdentifier: 
-  color: 3
-  sprite: {fileID: 21300000, guid: 219b77ee5a2821441baff57045be154b, type: 3}
+  Color: 3
+  s: {fileID: 21300000, guid: 219b77ee5a2821441baff57045be154b, type: 3}

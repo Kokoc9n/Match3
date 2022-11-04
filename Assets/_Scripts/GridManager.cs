@@ -1,11 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
-using DG.Tweening;
 
 public class GridManager : MonoBehaviour
 {
@@ -48,7 +46,7 @@ public class GridManager : MonoBehaviour
         public Gem g;
     }
     public ObjectiveGem[] Objectives;
-    private ObjectiveGem[] startingValues;
+    public ObjectiveGem[] startingValues;
     Vector2Int startPosition, endPosition;
     [SerializeField]
     float swipeRange = 0.2f;
@@ -58,17 +56,16 @@ public class GridManager : MonoBehaviour
 
     public void RestartLevel()
     {
+        firstSelected = null;
         Turns = startingTurns;
         Objectives = startingValues;
-        foreach(Cell c in cells)
+        FindObjectOfType<UIManager>().UpdateObjectives();
+        foreach (Cell c in cells)
         {
             c.g = null;
         }
         _ = SpawnGems(cells);
         gameState = GameState.Selecting;
-
-        firstSelected = null;
-        //endState = false;
         _ = PlayLevel();
     }
     void Start()
@@ -77,7 +74,14 @@ public class GridManager : MonoBehaviour
         map = transform.GetChild(0).GetComponent<Tilemap>();
         BoundsInt bounds = map.cellBounds;
         TileBase[] allTiles = map.GetTilesBlock(bounds);
-        startingValues = Objectives;
+        startingValues = new ObjectiveGem[Objectives.Length];
+        for (int i = 0; i < Objectives.Length; i++)
+        {
+            ObjectiveGem o = new ObjectiveGem();
+            o.g = Objectives[i].g;
+            o.ObjectiveCount = Objectives[i].ObjectiveCount;
+            startingValues[i] = o;
+        }
         startingTurns = Turns;
         // Grid gameobjects spawning&assigning, adding to lists.
         SetupGrid();
@@ -91,6 +95,13 @@ public class GridManager : MonoBehaviour
     {
         foreach(Cell c in list) 
         {
+            for (int i = 0; i < Objectives.Length; i++)
+            {
+                if (Objectives[i].g == c.g)
+                {
+                    Objectives[i].ObjectiveCount--;
+                }
+            }
             c.g = null;
             c.UpdateGemSprite();
         }
@@ -113,7 +124,6 @@ public class GridManager : MonoBehaviour
         }
         if (recursion)
         {
-            Debug.Log("recursion");
             recursion = gemMoved = false;
             await InitDrop();
         }
@@ -136,7 +146,6 @@ public class GridManager : MonoBehaviour
         }
         if (recursion)
         {
-            Debug.Log("recursion Slide");
             recursion = gemMoved = false;
             await InitSlide();
         }
@@ -162,7 +171,6 @@ public class GridManager : MonoBehaviour
                 + sPos 
                 - new Vector3(0, 0, Camera.main.transform.position.z);
             cell.CellGameObject.transform.position = Vector3.MoveTowards(cell.CellGameObject.transform.position, target, 0.5f);
-            Debug.Log("following");
             await Task.Yield();
         }
     }
@@ -174,21 +182,22 @@ public class GridManager : MonoBehaviour
 
         for (int i = 0; i < width * height - 1; i++)
         {
-            if (rows[i + 1].Coord.y == rows[i].Coord.y && rows[i + 1].g != null && rows[i].g != null &&
-                rows[i].g.c == rows[i + 1].g.c)
+            if (rows[i + 1].Coord.y == rows[i].Coord.y &&
+                rows[i + 1].g != null && rows[i].g != null &&
+                rows[i].g.Color == rows[i + 1].g.Color)
             {
-                if (!match3.Contains(rows[i])) match3.Add(rows[i]);
+                if (!match3.Contains(rows[i])) { match3.Add(rows[i]); }
                 match3.Add(rows[i + 1]);
             }
             else
             {
                 if (match3.Count >= 3)
                 {
-                    if (match3.Count >= supertileSize) 
-                    // Supertile horizontal.
                     matchedCellsRows.AddRange(match3);
+                    // Supertile horizontal.
+                    if (match3.Count >= supertileSize)
                     {
-                        matchedCellsRows.AddRange(await SuperTile(cells, width, i));
+                        matchedCellsRows.AddRange(await SuperTile(rows, width, i));
                     }
                 }
                 
@@ -198,10 +207,11 @@ public class GridManager : MonoBehaviour
 
         for (int i = 0; i < width * height - 1; i++)
         {
-            if (collums[i + 1].Coord.x == collums[i].Coord.x && collums[i + 1].g != null && collums[i].g != null &&
-                collums[i].g.c == collums[i + 1].g.c)
+            if (collums[i + 1].Coord.x == collums[i].Coord.x && 
+                collums[i + 1].g != null && collums[i].g != null &&
+                collums[i].g.Color == collums[i + 1].g.Color)
             {
-                if (!match3.Contains(collums[i])) match3.Add(collums[i]);
+                if (!match3.Contains(collums[i])) { match3.Add(collums[i]); }
                 match3.Add(collums[i + 1]);
             }
             else
@@ -212,7 +222,7 @@ public class GridManager : MonoBehaviour
                     // Supertile vertical.
                     if (match3.Count >= supertileSize) 
                     {
-                        matchedCellsColums.AddRange(await SuperTile(cells, height, i));
+                        matchedCellsColums.AddRange(await SuperTile(collums, height, i));
                     }
                 }
 
@@ -222,16 +232,7 @@ public class GridManager : MonoBehaviour
 
         matchedCellsColums.AddRange(matchedCellsRows);
         matchedCellsColums = matchedCellsColums.Distinct().ToList();
-        foreach (Cell c in matchedCellsColums)
-        {
-            for(int i = 0; i < Objectives.Length; i++)
-            {
-                if(Objectives[i].g == c.g)
-                {
-                    Objectives[i].ObjectiveCount--;
-                }
-            }
-        }
+        
         return matchedCellsColums;
     }
     private async Task SpawnGems(List<Cell> list)
@@ -279,7 +280,6 @@ public class GridManager : MonoBehaviour
     }
     private async Task SelectGems()
     {
-        Debug.Log("SelectGems called");
         while (gameState == GameState.Selecting)
         {
             if (tokenSource.Token.IsCancellationRequested)
@@ -287,7 +287,6 @@ public class GridManager : MonoBehaviour
                 gameState = GameState.End;
                 break;
             }
-            Debug.Log("selectingStateLoop");
             if (Input.GetMouseButtonDown(0))
             {
                 startPosition = Vector2Int.RoundToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition));
@@ -328,13 +327,11 @@ public class GridManager : MonoBehaviour
                     secondSelected = null;
                     // Animation.
                     firstSelected.GemSelectedAnimation();
-                    Debug.Log(firstSelected.Coord + " First selected");
                 }
                 endPosition = Vector2Int.RoundToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition));
                 if (firstSelected == secondSelected || swipeStartCell == secondSelected && secondSelected == null) 
                 {
                     // Reset.
-                    print("same cell selected");
                     firstSelected.GemDeselectedAnimation();
 
                     firstSelected = secondSelected = swipeStartCell = null;
@@ -397,7 +394,7 @@ public class GridManager : MonoBehaviour
             else if (gameState == GameState.Resolve)
             {
                 List<Cell> matched = await GetMatched();
-                if (matched.Count != 0) // > 0 ?
+                if (matched.Count > 0)
                 {
                     await PopMatched(matched);
                     await Task.Delay(_Delay);
@@ -441,22 +438,66 @@ public class GridManager : MonoBehaviour
                 }
             }
 
+            loopStart:
             int count = 0;
             foreach (ObjectiveGem objective in Objectives)
             {
                 if (objective.ObjectiveCount >= 0) count += objective.ObjectiveCount;
             }
-            if (count != 0 && Turns == 0)
+
+            if(Turns == 0)
             {
-                // Defeat.
-                Win = false;
-                gameState = GameState.End;
-            }
-            else if(count == 0)
-            {
-                // Win.
-                Win = true;
-                gameState = GameState.End;
+                List<Cell> matched = await GetMatched();
+
+                if (matched.Count > 0)
+                {
+                    await PopMatched(matched);
+                    await Task.Delay(_Delay);
+                    await InitDrop();
+                    await InitSlide();
+                    while (gemMoved)
+                    {
+                        await InitDrop();
+                        await InitSlide();
+                        await InitDrop();
+                    }
+                }
+                await Task.Delay(_Delay);
+                while (spawnerCells.Where(n => n.g == null).Any())
+                {
+                    await SpawnGems(spawnerCells);
+                    await Task.Delay(_Delay);
+                    await InitDrop();
+                    await InitSlide();
+                    while (gemMoved)
+                    {
+                        await InitDrop();
+                        await InitSlide();
+                        await InitDrop();
+                    }
+                }
+                matched = await GetMatched();
+                if (matched.Count == 0)
+                {
+                    await Task.Delay(_Delay);
+                }
+                else
+                {
+                    await Task.Delay(_Delay);
+                    goto loopStart;
+                }
+                if (count == 0)
+                {
+                    // Win.
+                    Win = true;
+                    gameState = GameState.End;
+                }
+                else
+                {
+                    // Defeat.
+                    Win = false;
+                    gameState = GameState.End;
+                }
             }
             await Task.Yield();
         }

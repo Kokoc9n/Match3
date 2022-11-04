@@ -3,11 +3,11 @@ using UnityEngine;
 [CreateAssetMenu]
 public class Gem : ScriptableObject
 {
-    public enum Color { Beige, Blue, Green, Pink, Yellow }
-    public Color c;
+    public enum Type { Beige, Blue, Green, Pink, Yellow }
+    public Type Color;
     public Sprite s;
-    public Gem(Color color)
+    public Gem(Type color)
     {
-        this.c = color;
+        this.Color = color;
     }
 }
