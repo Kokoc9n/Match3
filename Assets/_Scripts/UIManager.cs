@@ -5,23 +5,18 @@ using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
-    [SerializeField]
-    TMP_Text turns;
+    [SerializeField] TMP_Text turns;
+    [SerializeField] GameObject objectiveList, objectivePrefab, endScreen;
     List<TMP_Text> list = new List<TMP_Text>();
-    GridManager gridManager;
-    [SerializeField]
-    GameObject objectiveList, objectivePrefab, endScreen;
+    GameManager gridManager;
     void Start()
     {
-        gridManager = FindObjectOfType<GridManager>();
-        foreach(GridManager.ObjectiveGem gem in gridManager.Objectives)
-        {
-            GameObject g = Instantiate(objectivePrefab, objectiveList.transform);
-            list.Add(g.GetComponent<TMP_Text>());   
-        }
+        gridManager = FindObjectOfType<GameManager>();
         for(int i = 0; i < gridManager.Objectives.Length; i++)
         {
-            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].g.s;
+            GameObject objectiveObject = Instantiate(objectivePrefab, objectiveList.transform);
+            list.Add(objectiveObject.GetComponent<TMP_Text>());
+            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].g.GemSprite;
         }
     }
     public void UpdateObjectives()
@@ -31,14 +26,14 @@ public class UIManager : MonoBehaviour
             if (t.name != "Turn") Destroy(t.gameObject);
         }
         list.Clear();
-        foreach (GridManager.ObjectiveGem gem in gridManager.Objectives)
+        foreach (GemObjective gem in gridManager.Objectives)
         {
             GameObject g = Instantiate(objectivePrefab, objectiveList.transform);
             list.Add(g.GetComponent<TMP_Text>());
         }
         for (int i = 0; i < gridManager.Objectives.Length; i++)
         {
-            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].g.s;
+            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].g.GemSprite;
         }
     }
     void Update()
@@ -51,8 +46,8 @@ public class UIManager : MonoBehaviour
             }
             else list[i].text = "Done!";
         }
-        turns.text = gridManager.Turns.ToString() + "Turns left";
-        if(gridManager.gameState == GridManager.GameState.End)
+        turns.text = gridManager.Turns.ToString() + " Turns left";
+        if(gridManager.State == GameManager.GameState.End)
         {
             endScreen.SetActive(true);
             if(gridManager.Win)

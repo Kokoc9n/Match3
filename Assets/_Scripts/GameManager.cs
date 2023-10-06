@@ -5,55 +5,42 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 
-public class GridManager : MonoBehaviour
+public class GameManager : MonoBehaviour
 {
-    [SerializeField]
-    Gem[] gems;
-    Tilemap map;
-    int height, width;
+    public const int DELAY = 500;
+    public const int DROP_SPEED = 18;
     [HideInInspector]
     public List<Cell> cells = new List<Cell>();
-    List<Cell> spawnerCells = new List<Cell>();
-
-    List<Cell> rows;
-    List<Cell> collums;
-
-    public static int _Delay = 500;
-    // Gem drop speed mod. (Delay / dropSpeed).
-    public static int _DropSpeed = 18;
-    [SerializeField]
-    int supertileSize = 5;
-    Cell firstSelected, secondSelected, swipeStartCell;
-    [HideInInspector]
+    public int Turns = 10;
+    public bool Win;
+    public GemObjective[] Objectives;
+    public GemObjective[] startingValues;
     public enum GameState { Selecting, Resolve, Spawn, End, Win, Lose }
-    [HideInInspector]
-    public GameState gameState;
+    public GameState State { get; private set; }
+
+    [SerializeField] Gem[] gems;
+    [SerializeField] int supertileSize = 5;
+    [SerializeField] float swipeRange = 0.2f;
+    [SerializeField] float radius = 3;
+    private Tilemap map;
+    private int height, width;
+    private List<Cell> spawnerCells = new List<Cell>();
+
+    private List<Cell> rows;
+    private Vector2Int startPosition, endPosition;
+    private int startingTurns;
+
+    private bool gemMoved;
+    private bool isBeingDragged;
+    private Vector3 sPos;
+
+    private Cell firstSelected, secondSelected, swipeStartCell;
     CancellationTokenSource tokenSource = new CancellationTokenSource();
+
     private void OnApplicationQuit()
     {
         tokenSource.Cancel();
     }
-    public bool Win;
-    [SerializeField]
-    public int Turns = 10;
-    [SerializeField]
-    float radius = 3;
-    private int startingTurns;
-    [System.Serializable]
-    public class ObjectiveGem
-    {
-        public int ObjectiveCount;
-        public Gem g;
-    }
-    public ObjectiveGem[] Objectives;
-    public ObjectiveGem[] startingValues;
-    Vector2Int startPosition, endPosition;
-    [SerializeField]
-    float swipeRange = 0.2f;
-    bool gemMoved;
-    bool isBeingDragged;
-    Vector3 sPos;
-
     public void RestartLevel()
     {
         firstSelected = null;
@@ -62,69 +49,76 @@ public class GridManager : MonoBehaviour
         FindObjectOfType<UIManager>().UpdateObjectives();
         foreach (Cell c in cells)
         {
-            c.g = null;
+            c.Gem = null;
         }
         _ = SpawnGems(cells);
-        gameState = GameState.Selecting;
+        State = GameState.Selecting;
         _ = PlayLevel();
     }
     void Start()
     {
-        Application.targetFrameRate = 60;
         map = transform.GetChild(0).GetComponent<Tilemap>();
         BoundsInt bounds = map.cellBounds;
         TileBase[] allTiles = map.GetTilesBlock(bounds);
-        startingValues = new ObjectiveGem[Objectives.Length];
+        ObjectivesInit();
+
+        // Grid gameobjects spawning&assigning, adding to lists.
+        SetupGrid();
+        // Populating grid with gems.
+        _ = SpawnGems(cells);
+
+        State = GameState.Selecting;
+        firstSelected = null;
+        _ = PlayLevel();
+    }
+
+    private void ObjectivesInit()
+    {
+        startingValues = new GemObjective[Objectives.Length];
         for (int i = 0; i < Objectives.Length; i++)
         {
-            ObjectiveGem o = new ObjectiveGem();
+            GemObjective o = new GemObjective();
             o.g = Objectives[i].g;
             o.ObjectiveCount = Objectives[i].ObjectiveCount;
             startingValues[i] = o;
         }
         startingTurns = Turns;
-        // Grid gameobjects spawning&assigning, adding to lists.
-        SetupGrid();
-        // Populating grid with gems.
-        _ = SpawnGems(cells);
-        gameState = GameState.Selecting;
-        firstSelected = null;
-        _ = PlayLevel();
     }
+
     private async Task PopMatched(List<Cell> list)
     {
         foreach(Cell c in list) 
         {
             for (int i = 0; i < Objectives.Length; i++)
             {
-                if (Objectives[i].g == c.g)
+                if (Objectives[i].g == c.Gem)
                 {
                     Objectives[i].ObjectiveCount--;
                 }
             }
-            c.g = null;
+            c.Gem = null;
             c.UpdateGemSprite();
         }
         await Task.Yield();
     }
     private async Task InitDrop()
     {
-        bool recursion = false;
+        bool moved = false;
         for (int i = 0; i < width * height - 1 - width; i++)
         {
-            if(rows[i].g != null)
+            if(rows[i].Gem != null)
             {
                 if (rows[i].CheckBelow(rows, i, width))
                 {
                     rows[i].DropGem(rows, i, width);
-                    await Task.Delay(_Delay / _DropSpeed);
-                    recursion = gemMoved = true;
+                    await Task.Delay(DELAY / DROP_SPEED);
+                    moved = gemMoved = true;
                 }
             }
         }
-        if (recursion)
+        if (moved)
         {
-            recursion = gemMoved = false;
+            moved = gemMoved = false;
             await InitDrop();
         }
         await Task.Yield();
@@ -134,11 +128,11 @@ public class GridManager : MonoBehaviour
         bool recursion = false;
         for (int i = 0; i < width * height - 1 - width; i++)
         {
-            if (rows[i].g != null)
+            if (rows[i].Gem != null)
             {
                 if (rows[i].CheckDiagonal(rows, i, width))
                 {
-                    await Task.Delay(_Delay / _DropSpeed);
+                    await Task.Delay(DELAY / DROP_SPEED);
                     recursion = gemMoved = true;
                     await InitDrop();
                 }
@@ -158,7 +152,7 @@ public class GridManager : MonoBehaviour
         // Start at first cell of the row/column.
         for (int i = width * rowNumber - width; i < width * rowNumber; i++)
         {
-            if(list[i].t != Cell.Type.Void) superTile.Add(list[i]);
+            if(list[i].CellType != Cell.Type.Void) superTile.Add(list[i]);
         }
         return superTile;
     }
@@ -170,7 +164,10 @@ public class GridManager : MonoBehaviour
             Vector3 target =  Vector3.ClampMagnitude(offset, radius)
                 + sPos 
                 - new Vector3(0, 0, Camera.main.transform.position.z);
-            cell.CellGameObject.transform.position = Vector3.MoveTowards(cell.CellGameObject.transform.position, target, 0.5f);
+            cell.CellGameObject.transform.position =
+                Vector3.MoveTowards(cell.CellGameObject.transform.position,
+                                    target,
+                                    0.5f);
             await Task.Yield();
         }
     }
@@ -183,8 +180,8 @@ public class GridManager : MonoBehaviour
         for (int i = 0; i < width * height - 1; i++)
         {
             if (rows[i + 1].Coord.y == rows[i].Coord.y &&
-                rows[i + 1].g != null && rows[i].g != null &&
-                rows[i].g.Color == rows[i + 1].g.Color)
+                rows[i + 1].Gem != null && rows[i].Gem != null &&
+                rows[i].Gem.Color == rows[i + 1].Gem.Color)
             {
                 if (!match3.Contains(rows[i])) { match3.Add(rows[i]); }
                 match3.Add(rows[i + 1]);
@@ -207,12 +204,12 @@ public class GridManager : MonoBehaviour
 
         for (int i = 0; i < width * height - 1; i++)
         {
-            if (collums[i + 1].Coord.x == collums[i].Coord.x && 
-                collums[i + 1].g != null && collums[i].g != null &&
-                collums[i].g.Color == collums[i + 1].g.Color)
+            if (cells[i + 1].Coord.x == cells[i].Coord.x && 
+                cells[i + 1].Gem != null && cells[i].Gem != null &&
+                cells[i].Gem.Color == cells[i + 1].Gem.Color)
             {
-                if (!match3.Contains(collums[i])) { match3.Add(collums[i]); }
-                match3.Add(collums[i + 1]);
+                if (!match3.Contains(cells[i])) { match3.Add(cells[i]); }
+                match3.Add(cells[i + 1]);
             }
             else
             {
@@ -222,7 +219,7 @@ public class GridManager : MonoBehaviour
                     // Supertile vertical.
                     if (match3.Count >= supertileSize) 
                     {
-                        matchedCellsColums.AddRange(await SuperTile(collums, height, i));
+                        matchedCellsColums.AddRange(await SuperTile(cells, height, i));
                     }
                 }
 
@@ -239,9 +236,11 @@ public class GridManager : MonoBehaviour
     {
         foreach(Cell cell in list)
         {
-            if (cell.t == Cell.Type.Base || cell.t == Cell.Type.Spawner && cell.g == null)
+            if (cell.CellType == Cell.Type.Base 
+                || cell.CellType == Cell.Type.Spawner 
+                && cell.Gem == null)
             {
-                cell.g = gems[Random.Range(0, gems.Length)];
+                cell.Gem = gems[Random.Range(0, gems.Length)];
                 cell.UpdateGemSprite();
             }
         }
@@ -272,19 +271,19 @@ public class GridManager : MonoBehaviour
                 } 
             }
         }
+
         width = Mathf.Abs(cells[0].Coord.x - cells[cells.Count - 1].Coord.x) + 1;
         height = Mathf.Abs(cells[0].Coord.y - cells[cells.Count - 1].Coord.y) + 1;
 
         rows = new List<Cell>(cells.OrderByDescending(i => i.Coord.y).ToList());
-        collums = new List<Cell>(cells.OrderBy(i => i.Coord.x).ToList());
     }
     private async Task SelectGems()
     {
-        while (gameState == GameState.Selecting)
+        while (State == GameState.Selecting)
         {
             if (tokenSource.Token.IsCancellationRequested)
             {
-                gameState = GameState.End;
+                State = GameState.End;
                 break;
             }
             if (Input.GetMouseButtonDown(0))
@@ -307,17 +306,17 @@ public class GridManager : MonoBehaviour
                 {
                     secondSelected = cells.Where(n => n.Coord == startPosition).FirstOrDefault();
 
-                    if (secondSelected.t != Cell.Type.Void
+                    if (secondSelected.CellType != Cell.Type.Void
                         && Mathf.Abs(Vector2.Distance(firstSelected.Coord, secondSelected.Coord)) <= 1
                         && firstSelected != secondSelected)
                     {
                         Turns--;
                         firstSelected.GemDeselectedAnimation();
-                        gameState = GameState.Resolve;
+                        State = GameState.Resolve;
 
                         firstSelected.SwapGems(secondSelected);
                         firstSelected = secondSelected = null;
-                        await Task.Delay(_Delay);
+                        await Task.Delay(DELAY);
                         return;
                     }
                 }
@@ -329,7 +328,9 @@ public class GridManager : MonoBehaviour
                     firstSelected.GemSelectedAnimation();
                 }
                 endPosition = Vector2Int.RoundToInt(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-                if (firstSelected == secondSelected || swipeStartCell == secondSelected && secondSelected == null) 
+                if (firstSelected == secondSelected 
+                    || swipeStartCell == secondSelected 
+                    && secondSelected == null) 
                 {
                     // Reset.
                     firstSelected.GemDeselectedAnimation();
@@ -338,7 +339,8 @@ public class GridManager : MonoBehaviour
                     return;
                 }
                 // Swipe logic. Checking difference between first and second position.
-                if (startPosition != endPosition && swipeStartCell != null && Vector2.Distance(firstSelected.Coord, startPosition) < radius / 3)
+                if (startPosition != endPosition && swipeStartCell != null 
+                    && Vector2.Distance(firstSelected.Coord, startPosition) < radius / 3)
                 {
                     float deltaX = endPosition.x - startPosition.x;
                     float deltaY = endPosition.y - startPosition.y;
@@ -347,12 +349,14 @@ public class GridManager : MonoBehaviour
                         if (startPosition.x < endPosition.x)
                         {
                             // Right.
-                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x + 1, firstSelected.Coord.y)).FirstOrDefault();
+                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x + 1,
+                                                                                        firstSelected.Coord.y)).FirstOrDefault();
                         }
                         else
                         {
                             // Left.
-                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x - 1, firstSelected.Coord.y)).FirstOrDefault();
+                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x - 1,
+                                                                                        firstSelected.Coord.y)).FirstOrDefault();
                         }
                     }
                     else if ((deltaY <= -swipeRange || deltaY >= swipeRange))
@@ -360,22 +364,24 @@ public class GridManager : MonoBehaviour
                         if (startPosition.y < endPosition.y)
                         {
                             // Up.
-                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x, firstSelected.Coord.y + 1)).FirstOrDefault();
+                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x,
+                                                                                        firstSelected.Coord.y + 1)).FirstOrDefault();
                         }
                         else
                         {
                             // Down.
-                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x, firstSelected.Coord.y - 1)).FirstOrDefault();
+                            secondSelected = cells.Where(n => n.Coord == new Vector2Int(firstSelected.Coord.x,
+                                                                                        firstSelected.Coord.y - 1)).FirstOrDefault();
                         }
                     }
-                    if (secondSelected.t != Cell.Type.Void)
+                    if (secondSelected.CellType != Cell.Type.Void)
                     {
                         firstSelected.GemDeselectedAnimation();
                         firstSelected.SwapGems(secondSelected);
                         firstSelected = secondSelected = null;
                         Turns--;
-                        gameState = GameState.Resolve;
-                        await Task.Delay(_Delay);
+                        State = GameState.Resolve;
+                        await Task.Delay(DELAY);
                     }
                 }
             }
@@ -385,19 +391,19 @@ public class GridManager : MonoBehaviour
 
     private async Task PlayLevel()
     {
-        while (gameState != GameState.End)
+        while (State != GameState.End)
         {
-            if (gameState == GameState.Selecting)
+            if (State == GameState.Selecting)
             {
                 await SelectGems();
             }
-            else if (gameState == GameState.Resolve)
+            else if (State == GameState.Resolve)
             {
                 List<Cell> matched = await GetMatched();
                 if (matched.Count > 0)
                 {
                     await PopMatched(matched);
-                    await Task.Delay(_Delay);
+                    await Task.Delay(DELAY);
                     await InitDrop();
                     await InitSlide();
                     while (gemMoved)
@@ -407,15 +413,15 @@ public class GridManager : MonoBehaviour
                         await InitDrop();
                     }
                 }
-                gameState = GameState.Spawn;
-                await Task.Delay(_Delay);
+                State = GameState.Spawn;
+                await Task.Delay(DELAY);
             }
-            else if(gameState == GameState.Spawn)
+            else if(State == GameState.Spawn)
             {
-                while (spawnerCells.Where(n => n.g == null).Any())
+                while (spawnerCells.Where(n => n.Gem == null).Any())
                 {
                     await SpawnGems(spawnerCells);
-                    await Task.Delay(_Delay);
+                    await Task.Delay(DELAY);
                     await InitDrop();
                     await InitSlide();
                     while (gemMoved)
@@ -428,19 +434,19 @@ public class GridManager : MonoBehaviour
                 List<Cell> matched = await GetMatched();
                 if (matched.Count == 0)
                 {
-                    gameState = GameState.Selecting;
-                    await Task.Delay(_Delay);
+                    State = GameState.Selecting;
+                    await Task.Delay(DELAY);
                 }
                 else
                 {
-                    gameState = GameState.Resolve;
-                    await Task.Delay(_Delay);
+                    State = GameState.Resolve;
+                    await Task.Delay(DELAY);
                 }
             }
 
             loopStart:
             int count = 0;
-            foreach (ObjectiveGem objective in Objectives)
+            foreach (GemObjective objective in Objectives)
             {
                 if (objective.ObjectiveCount >= 0) count += objective.ObjectiveCount;
             }
@@ -452,7 +458,7 @@ public class GridManager : MonoBehaviour
                 if (matched.Count > 0)
                 {
                     await PopMatched(matched);
-                    await Task.Delay(_Delay);
+                    await Task.Delay(DELAY);
                     await InitDrop();
                     await InitSlide();
                     while (gemMoved)
@@ -462,11 +468,11 @@ public class GridManager : MonoBehaviour
                         await InitDrop();
                     }
                 }
-                await Task.Delay(_Delay);
-                while (spawnerCells.Where(n => n.g == null).Any())
+                await Task.Delay(DELAY);
+                while (spawnerCells.Where(n => n.Gem == null).Any())
                 {
                     await SpawnGems(spawnerCells);
-                    await Task.Delay(_Delay);
+                    await Task.Delay(DELAY);
                     await InitDrop();
                     await InitSlide();
                     while (gemMoved)
@@ -479,24 +485,22 @@ public class GridManager : MonoBehaviour
                 matched = await GetMatched();
                 if (matched.Count == 0)
                 {
-                    await Task.Delay(_Delay);
+                    await Task.Delay(DELAY);
                 }
                 else
                 {
-                    await Task.Delay(_Delay);
+                    await Task.Delay(DELAY);
                     goto loopStart;
                 }
                 if (count == 0)
                 {
-                    // Win.
                     Win = true;
-                    gameState = GameState.End;
+                    State = GameState.End;
                 }
                 else
                 {
-                    // Defeat.
                     Win = false;
-                    gameState = GameState.End;
+                    State = GameState.End;
                 }
             }
             await Task.Yield();
