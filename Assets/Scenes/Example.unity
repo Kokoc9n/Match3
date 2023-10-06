@@ -153,18 +153,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 296e3e66fb0bef149b9d055781e94df6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gems:
-  - {fileID: 11400000, guid: 711b6155207a85d4cacf5c126cfa6953, type: 2}
-  - {fileID: 11400000, guid: f97519b37f8e8e64c931f458f4e78dd4, type: 2}
-  - {fileID: 11400000, guid: 01e415b9690c847409770b951eda1e40, type: 2}
-  - {fileID: 11400000, guid: b5b05eeb67f39164a963fa8f6e0d553f, type: 2}
-  - {fileID: 11400000, guid: 5c47ba0b06d69d84aa7c7447d6c1e0a5, type: 2}
   cells: []
-  supertileSize: 5
-  gameState: 0
-  Win: 0
   Turns: 10
-  radius: 3
+  Win: 0
   Objectives:
   - ObjectiveCount: 30
     g: {fileID: 11400000, guid: 711b6155207a85d4cacf5c126cfa6953, type: 2}
@@ -173,7 +164,15 @@ MonoBehaviour:
   - ObjectiveCount: 15
     g: {fileID: 11400000, guid: b5b05eeb67f39164a963fa8f6e0d553f, type: 2}
   startingValues: []
+  gems:
+  - {fileID: 11400000, guid: 711b6155207a85d4cacf5c126cfa6953, type: 2}
+  - {fileID: 11400000, guid: f97519b37f8e8e64c931f458f4e78dd4, type: 2}
+  - {fileID: 11400000, guid: 01e415b9690c847409770b951eda1e40, type: 2}
+  - {fileID: 11400000, guid: b5b05eeb67f39164a963fa8f6e0d553f, type: 2}
+  - {fileID: 11400000, guid: 5c47ba0b06d69d84aa7c7447d6c1e0a5, type: 2}
+  supertileSize: 5
   swipeRange: 0.2
+  radius: 3
 --- !u!156049354 &222658079
 Grid:
   m_ObjectHideFlags: 0
@@ -2168,6 +2167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
   m_HorizontalAxis: Horizontal
   m_VerticalAxis: Vertical
   m_SubmitButton: Submit

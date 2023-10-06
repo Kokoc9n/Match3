@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Yellow
   m_EditorClassIdentifier: 
   Color: 4
-  s: {fileID: 21300000, guid: f6265e8838df1024e89b470c435fa9ad, type: 3}
+  GemSprite: {fileID: 21300000, guid: f6265e8838df1024e89b470c435fa9ad, type: 3}

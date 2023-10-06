@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e8f9a4bfc755d843af8a92e277e2894, type: 3}
   m_Name: Beige
   m_EditorClassIdentifier: 
-  c: 0
-  s: {fileID: 21300000, guid: bb473056b92009e478267164319ecd59, type: 3}
+  Color: 0
+  GemSprite: {fileID: 21300000, guid: bb473056b92009e478267164319ecd59, type: 3}
