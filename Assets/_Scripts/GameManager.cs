@@ -59,7 +59,7 @@ public class GameManager : MonoBehaviour
     {
         map = transform.GetChild(0).GetComponent<Tilemap>();
         BoundsInt bounds = map.cellBounds;
-        TileBase[] allTiles = map.GetTilesBlock(bounds);
+        //TileBase[] allTiles = map.GetTilesBlock(bounds);
         ObjectivesInit();
 
         // Grid gameobjects spawning&assigning, adding to lists.
@@ -248,9 +248,9 @@ public class GameManager : MonoBehaviour
     }
     void SetupGrid()
     {
-        for (int i = -100; i < 100; i++)
+        for (int i = -20; i < 20; i++)
         {
-            for (int k = -100; k < 100; k++)
+            for (int k = -20; k < 20; k++)
             {
                 if(map.GetTile(new Vector3Int(i, k, 0)) != null)
                 {
@@ -392,7 +392,7 @@ public class GameManager : MonoBehaviour
     private async Task PlayLevel()
     {
         while (State != GameState.End)
-        {
+        {   
             if (State == GameState.Selecting)
             {
                 await SelectGems();
@@ -416,7 +416,7 @@ public class GameManager : MonoBehaviour
                 State = GameState.Spawn;
                 await Task.Delay(DELAY);
             }
-            else if(State == GameState.Spawn)
+            else if (State == GameState.Spawn)
             {
                 while (spawnerCells.Where(n => n.Gem == null).Any())
                 {
@@ -424,75 +424,18 @@ public class GameManager : MonoBehaviour
                     await Task.Delay(DELAY);
                     await InitDrop();
                     await InitSlide();
-                    while (gemMoved)
-                    {
-                        await InitDrop();
-                        await InitSlide();
-                        await InitDrop();
-                    }
                 }
                 List<Cell> matched = await GetMatched();
-                if (matched.Count == 0)
+                int count = 0;
+                foreach (GemObjective objective in Objectives)
                 {
-                    State = GameState.Selecting;
-                    await Task.Delay(DELAY);
+                    if (objective.ObjectiveCount >= 0) count += objective.ObjectiveCount;
                 }
-                else
-                {
+                if (gemMoved || matched.Count > 0)
                     State = GameState.Resolve;
-                    await Task.Delay(DELAY);
-                }
-            }
-
-            loopStart:
-            int count = 0;
-            foreach (GemObjective objective in Objectives)
-            {
-                if (objective.ObjectiveCount >= 0) count += objective.ObjectiveCount;
-            }
-
-            if(Turns == 0)
-            {
-                List<Cell> matched = await GetMatched();
-
-                if (matched.Count > 0)
-                {
-                    await PopMatched(matched);
-                    await Task.Delay(DELAY);
-                    await InitDrop();
-                    await InitSlide();
-                    while (gemMoved)
-                    {
-                        await InitDrop();
-                        await InitSlide();
-                        await InitDrop();
-                    }
-                }
-                await Task.Delay(DELAY);
-                while (spawnerCells.Where(n => n.Gem == null).Any())
-                {
-                    await SpawnGems(spawnerCells);
-                    await Task.Delay(DELAY);
-                    await InitDrop();
-                    await InitSlide();
-                    while (gemMoved)
-                    {
-                        await InitDrop();
-                        await InitSlide();
-                        await InitDrop();
-                    }
-                }
-                matched = await GetMatched();
-                if (matched.Count == 0)
-                {
-                    await Task.Delay(DELAY);
-                }
-                else
-                {
-                    await Task.Delay(DELAY);
-                    goto loopStart;
-                }
-                if (count == 0)
+                else if (Turns != 0 && count > 0)
+                    State = GameState.Selecting;
+                else if(count == 0)
                 {
                     Win = true;
                     State = GameState.End;
@@ -503,6 +446,7 @@ public class GameManager : MonoBehaviour
                     State = GameState.End;
                 }
             }
+
             await Task.Yield();
         }
 
