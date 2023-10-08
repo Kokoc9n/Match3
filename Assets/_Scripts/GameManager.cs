@@ -37,9 +37,21 @@ public class GameManager : MonoBehaviour
     private Cell firstSelected, secondSelected, swipeStartCell;
     CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-    private void OnApplicationQuit()
+
+    private void Awake()
     {
-        tokenSource.Cancel();
+        map = transform.GetChild(0).GetComponent<Tilemap>();
+    }
+    void Start()
+    {
+        ObjectivesInit();
+
+        SetupGrid();
+        _ = SpawnGems(cells);
+
+        State = GameState.Selecting;
+        firstSelected = null;
+        _ = PlayLevel();
     }
     public void RestartLevel()
     {
@@ -55,22 +67,6 @@ public class GameManager : MonoBehaviour
         State = GameState.Selecting;
         _ = PlayLevel();
     }
-    void Start()
-    {
-        map = transform.GetChild(0).GetComponent<Tilemap>();
-        BoundsInt bounds = map.cellBounds;
-        //TileBase[] allTiles = map.GetTilesBlock(bounds);
-        ObjectivesInit();
-
-        // Grid gameobjects spawning&assigning, adding to lists.
-        SetupGrid();
-        // Populating grid with gems.
-        _ = SpawnGems(cells);
-
-        State = GameState.Selecting;
-        firstSelected = null;
-        _ = PlayLevel();
-    }
 
     private void ObjectivesInit()
     {
@@ -78,7 +74,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < Objectives.Length; i++)
         {
             GemObjective o = new GemObjective();
-            o.g = Objectives[i].g;
+            o.gem = Objectives[i].gem;
             o.ObjectiveCount = Objectives[i].ObjectiveCount;
             startingValues[i] = o;
         }
@@ -91,7 +87,7 @@ public class GameManager : MonoBehaviour
         {
             for (int i = 0; i < Objectives.Length; i++)
             {
-                if (Objectives[i].g == c.Gem)
+                if (Objectives[i].gem == c.Gem)
                 {
                     Objectives[i].ObjectiveCount--;
                 }
@@ -246,7 +242,7 @@ public class GameManager : MonoBehaviour
         }
         await Task.Yield();
     }
-    void SetupGrid()
+    private void SetupGrid()
     {
         for (int i = -20; i < 20; i++)
         {
@@ -438,17 +434,22 @@ public class GameManager : MonoBehaviour
                 else if(count == 0)
                 {
                     Win = true;
-                    State = GameState.End;
+                    firstSelected = secondSelected = null;
+                    break;
                 }
                 else
                 {
                     Win = false;
-                    State = GameState.End;
+                    firstSelected = secondSelected = null;
+                    break;
                 }
             }
-
             await Task.Yield();
         }
-
+        State = GameState.End;
+    }
+    private void OnApplicationQuit()
+    {
+        tokenSource.Cancel();
     }
 }

@@ -16,7 +16,7 @@ public class UIManager : MonoBehaviour
         {
             GameObject objectiveObject = Instantiate(objectivePrefab, objectiveList.transform);
             list.Add(objectiveObject.GetComponent<TMP_Text>());
-            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].g.GemSprite;
+            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].gem.GemSprite;
         }
     }
     public void UpdateObjectives()
@@ -33,7 +33,7 @@ public class UIManager : MonoBehaviour
         }
         for (int i = 0; i < gridManager.Objectives.Length; i++)
         {
-            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].g.GemSprite;
+            list[i].transform.GetChild(0).GetComponent<Image>().sprite = gridManager.Objectives[i].gem.GemSprite;
         }
     }
     void Update()

@@ -158,11 +158,11 @@ MonoBehaviour:
   Win: 0
   Objectives:
   - ObjectiveCount: 30
-    g: {fileID: 11400000, guid: 711b6155207a85d4cacf5c126cfa6953, type: 2}
+    gem: {fileID: 11400000, guid: 711b6155207a85d4cacf5c126cfa6953, type: 2}
   - ObjectiveCount: 20
-    g: {fileID: 11400000, guid: 01e415b9690c847409770b951eda1e40, type: 2}
+    gem: {fileID: 11400000, guid: 01e415b9690c847409770b951eda1e40, type: 2}
   - ObjectiveCount: 15
-    g: {fileID: 11400000, guid: b5b05eeb67f39164a963fa8f6e0d553f, type: 2}
+    gem: {fileID: 11400000, guid: 5c47ba0b06d69d84aa7c7447d6c1e0a5, type: 2}
   startingValues: []
   gems:
   - {fileID: 11400000, guid: 711b6155207a85d4cacf5c126cfa6953, type: 2}

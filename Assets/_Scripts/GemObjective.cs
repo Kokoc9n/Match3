@@ -2,5 +2,5 @@
 public class GemObjective
 {
     public int ObjectiveCount;
-    public Gem g;
+    public Gem gem;
 }
